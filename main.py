@@ -6,6 +6,8 @@ import warnings
 from distutils.version import LooseVersion
 import project_tests as tests
 
+STDEV = 1e-2
+L2_REG = 1e-5
 
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
@@ -34,7 +36,16 @@ def load_vgg(sess, vgg_path):
     vgg_layer4_out_tensor_name = 'layer4_out:0'
     vgg_layer7_out_tensor_name = 'layer7_out:0'
     
-    return None, None, None, None, None
+    graph = tf.get_default_graph()
+    tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+    
+    input_image = graph.get_tensor_by_name(vgg_input_tensor_name)
+    keep_prob = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
+    layer3 = graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
+    layer4 = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
+    layer7 = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
+    
+    return input_image, keep_prob, layer3, layer4, layer7
 tests.test_load_vgg(load_vgg, tf)
 
 
@@ -48,7 +59,15 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :return: The Tensor for the last layer of output
     """
     # TODO: Implement function
-    return None
+    conv_layer_7_1x1 = tf.layers.conv2d(inputs=vgg_layer7_out, filters=num_classes, kernel_size=1, strides=1, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
+    deconv_layer_1_output = tf.layers.conv2d_transpose(inputs=conv_layer_7_1x1, filters=num_classes, kernel_size=4, strides=2, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
+    conv_layer_4_1x1 = tf.layers.conv2d(inputs=vgg_layer4_out, filters=num_classes, kernel_size=1, strides=1, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
+    skip_connection_1 = tf.add(deconv_layer_1_output, conv_layer_4_1x1)
+    deconv_layer_2 = tf.layers.conv2d_transpose(inputs=skip_connection_1, filters=num_classes, kernel_size=4, strides=2, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
+    layer_3_conv_1x1 = tf.layers.conv2d(inputs=vgg_layer3_out, filters=num_classes, kernel_size=1, strides=1, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
+    skip_connection_2 = tf.add(deconv_layer_2, layer3_conv_1x1)
+    output_conv_layer = tf.layers.conv2d_transpose(inputs=skip_connection_2, filters=num_classes, kernel_size=16, strides=8, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
+    return output_conv_layer
 tests.test_layers(layers)
 
 
@@ -110,7 +129,7 @@ def run():
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
         # TODO: Build NN using load_vgg, layers, and optimize function
-
+        
         # TODO: Train NN using the train_nn function
 
         # TODO: Save inference data using helper.save_inference_samples
