@@ -1,6 +1,49 @@
 # Semantic Segmentation
-### Introduction
-In this project, I'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+## Overview
+The object of this project is to label pixels of a road image using the Fully Convolutional Network (FCN) described in the [Fully Convolutional Networks for Semantic Segmentation](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) by Jonathan Long, Even Shelhamer, and Trevor Darrel.
+
+## Fully Convolutional Network Visualization
+Entire model structure is developed as below including three featrues such as 1x1 convolution, deconvolution(Transpose), and skip layer.
+![Network Figure](./FCN_image.png)
+
+## Code Description
+Most of the code is inside `main.py`. The code downloads a pre-trained VGG16 model and extract the input, keep probability, layer 3, layer 4 and layer 7 from it (function `load_vgg`int `main.py` from line 32 to line 56). Those layers are used in the function `layers` to create the rest of the network:
+- One convolutional layer with kernel 1 from VGG's layer 7 (line 70)
+- One deconvolutional layer with kernel 4 and stride 2 from the first convolutional layer (line 71)
+- One convolutional layer with kernel 1 from VGG's layer 4 (line 72)
+- The two layers above are added to create the first skip layer (line 73)
+- One deconvolutional layer with kernel 4 and stride 2 from the first ship layer (line 74)
+- One convolutional layer with kernel 1 from VGG's layer 3 (line 75)
+- The two layers above are added to create the second skip layer (line 76)
+- One deconvolutional layer with kernel 16 and stride 8 from the second skip layer (line 77)
+
+Every created convolutional and deconvolutional layer use a random-normal kernel initializer with standard deviation 0.01 and a L2 kernel regularizer with L2 0.00001.
+
+Once the network structure is defined, the optimizer and the cross-entropy lost is defined on the function `optimize` in `main.py`(from line 82 to line 99) method using [Adam optimizer](https://en.wikipedia.org/wiki/Stochastic_gradient_descent#Adam).
+
+The network is trained using the function `train_nn` in `main.py`(from line 103 to line 126) using keep probability 0.8 and learning rate 0.0001. To facilitate the loss value analysis, later on, every batch loss values are stored in an array, and the cross-entropy losses are plotted for each batch.
+
+## Hyperparameters
+```python
+L2_REG = 1e-5
+STDEV = 1e-2
+KEEP_PROB = 0.8
+LEARNING_RATE = 1e-4
+EPOCHS = 20
+BATCH_SIZE = 8
+IMAGE_SHAPE = (160, 576)
+NUM_CLASSES = 2
+```
+
+## Training
+The network training was dong for 20 epochs, and the following graph shows the loss performance
+![Loss Graph](runs/Loss_Graph.png)
+
+## Output
+
+Original Image          |  Classified Image
+:-------------------------:|:-------------------------:
+![Original](runs/Testing_Image.png)  |  ![Classified](runs/Classified_Image.png)
 
 ### Setup
 ##### GPU
@@ -27,14 +70,6 @@ Run the following command to run the project:
 python main.py
 ```
 **Note:** If running this in Jupyter Notebook system messages, such as those regarding test status, may appear in the terminal rather than the notebook.
-
-#### Example Outputs
-Here are examples of a sufficient vs. insufficient output from a trained network:
-
-Sufficient Result          |  Insufficient Result
-:-------------------------:|:-------------------------:
-![Sufficient](./examples/sufficient_result.png)  |  ![Insufficient](./examples/insufficient_result.png)
-
  
 ### Tips
 - The link for the frozen `VGG16` model is hardcoded into `helper.py`.  The model can be found [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip).
