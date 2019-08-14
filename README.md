@@ -43,7 +43,7 @@ The network training was dong for 20 epochs, and the following graph shows the l
 
 Original Image          |  Classified Image
 :-------------------------:|:-------------------------:
-![Original](runs/Testing_Image.png)  |  ![Classified](runs/Classified_Image.png)
+![Original](runs/Training_Image.png)  |  ![Classified](runs/Classified_Image.png)
 
 ### Setup
 ##### GPU
