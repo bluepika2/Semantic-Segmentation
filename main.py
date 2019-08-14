@@ -13,6 +13,11 @@ LEARNING_RATE = 1e-4
 EPOCHS = 20
 BATCH_SIZE = 8
 
+num_classes = 2
+image_shape = (160, 576)  # KITTI dataset uses 160x576 images
+data_dir = './data'
+runs_dir = './runs'
+
 # Check TensorFlow Version
 assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
 print('TensorFlow Version: {}'.format(tf.__version__))
@@ -31,8 +36,7 @@ def load_vgg(sess, vgg_path):
     :param vgg_path: Path to vgg folder, containing "variables/" and "saved_model.pb"
     :return: Tuple of Tensors from VGG model (image_input, keep_prob, layer3_out, layer4_out, layer7_out)
     """
-    # TODO: Implement function
-    #   Use tf.saved_model.loader.load to load the model and weights
+    
     vgg_tag = 'vgg16'
     vgg_input_tensor_name = 'image_input:0'
     vgg_keep_prob_tensor_name = 'keep_prob:0'
@@ -62,7 +66,7 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
+   
     conv_layer_7_1x1 = tf.layers.conv2d(inputs=vgg_layer7_out, filters=num_classes, kernel_size=1, strides=1, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
     deconv_layer_1_output = tf.layers.conv2d_transpose(inputs=conv_layer_7_1x1, filters=num_classes, kernel_size=4, strides=2, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
     conv_layer_4_1x1 = tf.layers.conv2d(inputs=vgg_layer4_out, filters=num_classes, kernel_size=1, strides=1, padding='SAME', kernel_initializer=tf.random_normal_initializer(stddev=STDEV), kernel_regularizer=tf.contrib.layers.l2_regularizer(L2_REG))
@@ -84,7 +88,7 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :param num_classes: Number of classes to classify
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
-    # TODO: Implement function
+    #
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
     labels = tf.reshape(correct_label, (-1, num_classes))
     
@@ -111,7 +115,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
-    # TODO: Implement function
+    
     losses = []
     for epoch in range(epochs):
         loss = None
@@ -119,14 +123,12 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
             _, loss = sess.run([train_op, cross_entropy_loss], feed_dict={input_image: images, correct_label: labels, keep_prob: KEEP_PROB, learning_rate: LEARNING_RATE})
             losses.append(loss)
         print("[Epoch: {0}/{1}, Loss: {2:4f}]".format(epoch+1, epochs, loss))
+    helper.plot_loss(runs_dir, losses, "Loss Graph")
 tests.test_train_nn(train_nn)
 
 
 def run():
-    num_classes = 2
-    image_shape = (160, 576)  # KITTI dataset uses 160x576 images
-    data_dir = './data'
-    runs_dir = './runs'
+    
     tests.test_for_kitti_dataset(data_dir)
 
     # Download pretrained vgg model
@@ -146,7 +148,7 @@ def run():
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
 
-        # TODO: Build NN using load_vgg, layers, and optimize function
+        
         input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
         output_layer = layers(layer3, layer4, layer7, num_classes)
         
